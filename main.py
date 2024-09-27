@@ -4,6 +4,7 @@ import argparse
 import requests
 from multiprocessing import Process, Manager
 import random
+from colorama import Fore, Back, Style
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--proxylist', type=str, help='Proxy list', required=True)
@@ -19,10 +20,10 @@ if proxytype !="http" and proxytype !="socks5":
     print(f"{proxytype} is not a valid proxy type!")
     parser.print_help()
     exit()
-URLs = ['https://icanhazip.com', 'https://eth0.me', 'https://ifconfig.me', 'https://ipinfo.io/ip', 'https://wtfismyip.com/text', 'https://ifconfig.io', 'https://ipecho.net/plain', 'https://ipnr.dk', 'https://api.ipify.org', 'https://whatismyip.akamai.com']
-to = 3
+URLs = ['https://icanhazip.com', 'https://eth0.me', 'https://ifconfig.me', 'https://ipinfo.io/ip', 'https://wtfismyip.com/text', 'https://ifconfig.io', 'https://ipecho.net/plain', 'https://ipnr.dk', 'https://api.ipify.org', 'https://whatismyip.akamai.com', 'https://am.i.mullvad.net/ip']
+to = 5
 
-ASCII = r"""
+ASCII = Fore.BLUE+r"""
  _
 | | _____ _        _
 | |/  ___| |      | |
@@ -34,8 +35,8 @@ ASCII = r"""
 | |                      |_|
 | | Just a proxy checker
 | |
-| | "Rate-limits don't exist if you have enough proxies" 
-| |"""
+| | "Rate-limits don't exist if you have enough proxies"
+| |"""+Style.RESET_ALL
 
 def check_proxy(proxy, valid_proxies, bad_proxies, good_count, bad_count, checked_count):
     try:
@@ -60,9 +61,13 @@ def check_proxy(proxy, valid_proxies, bad_proxies, good_count, bad_count, checke
             bad_proxies.put(proxy)
             bad_count.value += 1
     except Exception as e:
+#        print(f"Error: {e}")
+        bad_proxies.put(proxy)
+        bad_count.value += 1
         pass
     finally:
         checked_count.value += 1
+        print(Fore.GREEN+'| |', 'Good proxies:', good_count.value, Fore.RED+'| |', 'Bad proxies:', checked_count.value-good_count.value, Fore.MAGENTA+'| |','Checked proxies:', checked_count.value, Style.RESET_ALL, end='\r')
 
 def process(proxy_list, valid_proxies, bad_proxies, good_count, bad_count, checked_count):
     for proxy in proxy_list:
@@ -74,8 +79,8 @@ if __name__ == "__main__":
     with open(proxylist) as f:
         proxy_list = f.readlines()
 
-    print('| | Loaded', len(proxy_list), 'proxies')
-    print('| | Checking proxies...')
+    print(Fore.YELLOW+'| | Loaded', len(proxy_list), 'proxies'+Style.RESET_ALL)
+    print(Fore.CYAN+'| | Checking proxies...'+Style.RESET_ALL)
     manager = Manager()
     valid_proxies = manager.Queue()
     bad_proxies = manager.Queue()
@@ -91,9 +96,6 @@ if __name__ == "__main__":
         p = Process(target=process, args=(proxy_list[start:end], valid_proxies, bad_proxies, good_count, bad_count, checked_count))
         p.start()
         processes.append(p)
-
-    while len(processes) > 1:
-        print('| |', 'Good proxies:', good_count.value, '| |', 'Bad proxies:', checked_count.value-good_count.value, '| |', 'Checked proxies:', checked_count.value, '| |', end='\r')
 
     for p in processes:
         p.join()
