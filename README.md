@@ -8,7 +8,12 @@ It just runs through a list of proxies you provide of a specified type and check
 2) `python3 -m venv venv`
 3) `source venv/bin/activate`
 4) `pip3 install -r requirements.txt`
-5) `python3 main.py -p <infile.txt> -t <Proxy type (http or socks5)> -o <outfile.txt> -n <number of processes>`
+5) `python3 main.py -p <infile.txt> -t <Proxy type (http or socks5)> -o <outfile.txt> -n <number of workers>`
+
+`-n` controls bounded worker threads. The checker reuses one HTTP session per
+worker and writes the output once after all checks finish. Use `--timeout` to
+override the five-second per-request timeout.
 
 ## Known issues
-I'm not entirely sure why, probably because I chose to try multiprocessing instead of threading, sometimes it never finishes running through the list of proxies.  
+The checker uses threads rather than one process per chunk, which avoids the
+old multiprocessing hang and reduces process and connection setup overhead.
